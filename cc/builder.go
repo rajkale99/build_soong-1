@@ -250,6 +250,7 @@ type builderFlags struct {
 	rsFlags        string
 	toolchain      config.Toolchain
 	clang          bool
+	sdclang        bool
 	tidy           bool
 	coverage       bool
 	sAbiDump       bool
@@ -430,8 +431,12 @@ func TransformSourceToObj(ctx android.ModuleContext, subdir string, srcFiles and
 
 		var extraFlags string
 		if flags.clang {
-			ccCmd = "${config.ClangBin}/" + ccCmd
-			extraFlags = " ${config.VendorClangFlags}"
+			if flags.sdclang {
+				ccCmd = "${config.SDClangBin}/" + ccCmd
+				extraFlags = " ${config.SDClangFlags}"
+			} else {
+				ccCmd = "${config.ClangBin}/" + ccCmd
+			}
 		} else {
 			ccCmd = gccCmd(flags.toolchain, ccCmd)
 		}
@@ -620,8 +625,14 @@ func TransformObjToDynamicBinary(ctx android.ModuleContext,
 	crtBegin, crtEnd android.OptionalPath, groupLate bool, flags builderFlags, outputFile android.WritablePath) {
 
 	var ldCmd string
+	var extraFlags string
 	if flags.clang {
-		ldCmd = "${config.ClangBin}/clang++"
+		if flags.sdclang {
+			ldCmd = "${config.SDClangBin}/clang++"
+			extraFlags = " ${config.SDClangFlags}"
+		} else {
+			ldCmd = "${config.ClangBin}/clang++"
+		}
 	} else {
 		ldCmd = gccCmd(flags.toolchain, "g++")
 	}
@@ -679,7 +690,7 @@ func TransformObjToDynamicBinary(ctx android.ModuleContext,
 			"ldCmd":    ldCmd,
 			"crtBegin": crtBegin.String(),
 			"libFlags": strings.Join(libFlagsList, " "),
-			"ldFlags":  flags.ldFlags,
+			"ldFlags":  flags.ldFlags + extraFlags,
 			"crtEnd":   crtEnd.String(),
 		},
 	})
@@ -771,8 +782,14 @@ func TransformObjsToObj(ctx android.ModuleContext, objFiles android.Paths,
 	flags builderFlags, outputFile android.WritablePath) {
 
 	var ldCmd string
+        var extraFlags string
 	if flags.clang {
-		ldCmd = "${config.ClangBin}/clang++"
+		if flags.sdclang {
+			ldCmd = "${config.SDClangBin}/clang++"
+			extraFlags = " ${config.SDClangFlags}"
+		} else {
+			ldCmd = "${config.ClangBin}/clang++"
+		}
 	} else {
 		ldCmd = gccCmd(flags.toolchain, "g++")
 	}
@@ -784,7 +801,7 @@ func TransformObjsToObj(ctx android.ModuleContext, objFiles android.Paths,
 		Inputs:      objFiles,
 		Args: map[string]string{
 			"ldCmd":   ldCmd,
-			"ldFlags": flags.ldFlags,
+			"ldFlags": flags.ldFlags + extraFlags,
 		},
 	})
 }
