@@ -220,6 +220,8 @@ type productVariables struct {
 	SanitizeDeviceDiag []string `json:",omitempty"`
 	SanitizeDeviceArch []string `json:",omitempty"`
 
+	Target_use_sdclang  *bool `json:",omitempty"`
+
 	ArtUseReadBarrier *bool `json:",omitempty"`
 
 	BtConfigIncludeDir *string `json:",omitempty"`
